@@ -1,0 +1,8 @@
+D:\QLTC\qltc-backend\src\main\java\com\qltc\QltcBackendApplication.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\config\SecurityConfig.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\CustomUserDetailsService.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\JwtAuthenticationFilter.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\JwtService.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\UserPrincipal.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\user\infrastructure\persistence\entity\UserEntity.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\user\infrastructure\persistence\repository\UserRepository.java
