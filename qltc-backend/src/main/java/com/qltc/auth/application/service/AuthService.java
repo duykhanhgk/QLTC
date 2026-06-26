@@ -3,7 +3,9 @@ package com.qltc.auth.application.service;
 import com.qltc.auth.api.dto.AuthResponse;
 import com.qltc.auth.api.dto.LoginRequest;
 import com.qltc.auth.api.dto.RegisterRequest;
+import com.qltc.shared.security.AuthConstants;
 import com.qltc.shared.security.JwtService;
+import com.qltc.shared.security.UserPrincipal;
 import com.qltc.user.infrastructure.persistence.entity.UserEntity;
 import com.qltc.user.infrastructure.persistence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,7 @@ public class AuthService {
         log.info("Registering user: {}", request.getUsername());
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trên hệ thống");
+            throw new IllegalArgumentException(AuthConstants.USERNAME_EXISTS_MESSAGE);
         }
 
         UserEntity user = UserEntity.builder()
@@ -52,7 +54,7 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .token(token)
-                .tokenType("Bearer")
+                .tokenType(AuthConstants.TOKEN_TYPE_BEARER)
                 .id(savedUser.getId())
                 .username(savedUser.getUsername())
                 .fullName(savedUser.getFullName())
@@ -70,15 +72,16 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtService.generateToken(authentication);
 
-        UserEntity user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin người dùng"));
+        // Optimization: Extract user details directly from the authenticated principal in memory,
+        // avoiding a redundant database query!
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
         return AuthResponse.builder()
                 .token(token)
-                .tokenType("Bearer")
-                .id(user.getId())
-                .username(user.getUsername())
-                .fullName(user.getFullName())
+                .tokenType(AuthConstants.TOKEN_TYPE_BEARER)
+                .id(principal.getId())
+                .username(principal.getUsername())
+                .fullName(principal.getFullName())
                 .build();
     }
 }
