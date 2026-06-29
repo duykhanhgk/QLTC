@@ -3,9 +3,10 @@ import { User, Lock, Coins, ArrowRight } from 'lucide-react';
 import { MainLayout } from './layouts/MainLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { WalletPage } from './pages/WalletPage';
+import { TransactionPage } from './pages/TransactionPage';
 
 type Screen = 'LOGIN' | 'REGISTER' | 'MAIN_APP';
-type Tab = 'DASHBOARD' | 'WALLET';
+type Tab = 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('LOGIN');
@@ -264,6 +265,7 @@ export default function App() {
     >
       {activeTab === 'DASHBOARD' && <DashboardPage />}
       {activeTab === 'WALLET' && <WalletPage />}
+      {activeTab === 'TRANSACTIONS' && <TransactionPage />}
     </MainLayout>
   );
 }

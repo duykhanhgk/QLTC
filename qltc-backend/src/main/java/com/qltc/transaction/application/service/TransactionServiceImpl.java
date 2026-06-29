@@ -8,6 +8,10 @@ import com.qltc.transaction.infrastructure.persistence.entity.TransactionEntity;
 import com.qltc.transaction.infrastructure.persistence.repository.JpaTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +32,14 @@ public class TransactionServiceImpl implements TransactionService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<TransactionResponse> searchTransactions(Long userId, Long walletId, Long categoryId, String note, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate"));
+        return transactionRepository.searchTransactions(userId, walletId, categoryId, note, pageable)
+                .map(this::mapToResponse);
     }
 
     @Override

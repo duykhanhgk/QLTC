@@ -13,8 +13,8 @@ import {
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  activeTab: 'DASHBOARD' | 'WALLET';
-  onTabChange: (tab: 'DASHBOARD' | 'WALLET') => void;
+  activeTab: 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS';
+  onTabChange: (tab: 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS') => void;
   onLogout: () => void;
 }
 
@@ -46,7 +46,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, onT
               <TrendingUp className="h-5 w-5" />
               Tổng quan
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-all">
+            <button 
+              onClick={() => onTabChange('TRANSACTIONS')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'TRANSACTIONS' ? 'bg-[#005F9E] text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
               <BookOpen className="h-5 w-5" />
               Sổ ghi chép
             </button>

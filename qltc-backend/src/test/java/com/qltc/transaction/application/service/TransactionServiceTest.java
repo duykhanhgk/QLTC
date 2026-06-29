@@ -14,9 +14,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,5 +81,23 @@ public class TransactionServiceTest {
                 .build();
 
         assertThrows(IllegalArgumentException.class, () -> transactionService.createTransaction(1L, request));
+    }
+
+    @Test
+    void searchTransactions_ShouldReturnPagedResults() {
+        TransactionEntity savedEntity = TransactionEntity.builder()
+                .id(100L)
+                .categoryId(1L)
+                .toWalletId(2L)
+                .amount(new BigDecimal("50000"))
+                .type(TransactionType.INCOME)
+                .build();
+        
+        Page<TransactionEntity> page = new PageImpl<>(Collections.singletonList(savedEntity));
+        when(transactionRepository.searchTransactions(eq(1L), any(), any(), any(), any(Pageable.class))).thenReturn(page);
+        
+        Page<TransactionResponse> result = transactionService.searchTransactions(1L, null, null, null, 0, 10);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(100L, result.getContent().get(0).getId());
     }
 }
