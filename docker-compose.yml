@@ -19,5 +19,21 @@ services:
       timeout: 5s
       retries: 5
 
+  qltc-backend:
+    build:
+      context: ./qltc-backend
+      dockerfile: Dockerfile
+    container_name: qltc-backend
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://qltc-db:3306/qltc_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: qltc_user
+      SPRING_DATASOURCE_PASSWORD: qltc_password
+    depends_on:
+      qltc-db:
+        condition: service_healthy
+    restart: on-failure
+
 volumes:
   qltc_mysql_data:

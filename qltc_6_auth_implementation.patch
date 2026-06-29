@@ -1,0 +1,465 @@
+diff --git a/pom.xml b/pom.xml
+new file mode 100644
+index 0000000..b934546
+--- /dev/null
++++ b/pom.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xmlns="http://maven.apache.org/POM/4.0.0"
++         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
++    <modelVersion>4.0.0</modelVersion>
++    
++    <groupId>com.qltc</groupId>
++    <artifactId>qltc-parent</artifactId>
++    <version>0.0.1-SNAPSHOT</version>
++    <packaging>pom</packaging>
++    
++    <name>qltc-parent</name>
++    <description>Parent POM for Quản lý thu chi (QLTC) project</description>
++
++    <modules>
++        <module>qltc-backend</module>
++    </modules>
++</project>
+diff --git a/qltc-backend/src/main/java/com/qltc/auth/api/AuthController.java b/qltc-backend/src/main/java/com/qltc/auth/api/AuthController.java
+new file mode 100644
+index 0000000..af1e655
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/auth/api/AuthController.java
+@@ -0,0 +1,31 @@
++package com.qltc.auth.api;
++
++import com.qltc.auth.api.dto.AuthResponse;
++import com.qltc.auth.api.dto.LoginRequest;
++import com.qltc.auth.api.dto.RegisterRequest;
++import com.qltc.auth.application.service.AuthService;
++import jakarta.validation.Valid;
++import lombok.RequiredArgsConstructor;
++import org.springframework.http.HttpStatus;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++
++@RestController
++@RequestMapping("/api/auth")
++@RequiredArgsConstructor
++public class AuthController {
++
++    private final AuthService authService;
++
++    @PostMapping("/register")
++    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
++        AuthResponse response = authService.register(request);
++        return new ResponseEntity<>(response, HttpStatus.CREATED);
++    }
++
++    @PostMapping("/login")
++    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
++        AuthResponse response = authService.login(request);
++        return ResponseEntity.ok(response);
++    }
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/auth/api/dto/AuthResponse.java b/qltc-backend/src/main/java/com/qltc/auth/api/dto/AuthResponse.java
+new file mode 100644
+index 0000000..4288930
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/auth/api/dto/AuthResponse.java
+@@ -0,0 +1,15 @@
++package com.qltc.auth.api.dto;
++
++import lombok.*;
++
++@Data
++@NoArgsConstructor
++@AllArgsConstructor
++@Builder
++public class AuthResponse {
++    private String token;
++    private String tokenType; // "Bearer"
++    private Long id;
++    private String username;
++    private String fullName;
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/auth/api/dto/LoginRequest.java b/qltc-backend/src/main/java/com/qltc/auth/api/dto/LoginRequest.java
+new file mode 100644
+index 0000000..0527479
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/auth/api/dto/LoginRequest.java
+@@ -0,0 +1,16 @@
++package com.qltc.auth.api.dto;
++
++import jakarta.validation.constraints.NotBlank;
++import lombok.*;
++
++@Data
++@NoArgsConstructor
++@AllArgsConstructor
++@Builder
++public class LoginRequest {
++    @NotBlank(message = "Tên đăng nhập không được để trống")
++    private String username;
++
++    @NotBlank(message = "Mật khẩu không được để trống")
++    private String password;
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/auth/api/dto/RegisterRequest.java b/qltc-backend/src/main/java/com/qltc/auth/api/dto/RegisterRequest.java
+new file mode 100644
+index 0000000..db06069
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/auth/api/dto/RegisterRequest.java
+@@ -0,0 +1,23 @@
++package com.qltc.auth.api.dto;
++
++import jakarta.validation.constraints.NotBlank;
++import jakarta.validation.constraints.Size;
++import lombok.*;
++
++@Data
++@NoArgsConstructor
++@AllArgsConstructor
++@Builder
++public class RegisterRequest {
++    @NotBlank(message = "Tên đăng nhập không được để trống")
++    @Size(min = 3, max = 50, message = "Tên đăng nhập phải từ 3 đến 50 ký tự")
++    private String username;
++
++    @NotBlank(message = "Mật khẩu không được để trống")
++    @Size(min = 6, max = 100, message = "Mật khẩu phải từ 6 đến 100 ký tự")
++    private String password;
++
++    @NotBlank(message = "Họ và tên không được để trống")
++    @Size(max = 100, message = "Họ và tên không được vượt quá 100 ký tự")
++    private String fullName;
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/auth/application/service/AuthService.java b/qltc-backend/src/main/java/com/qltc/auth/application/service/AuthService.java
+new file mode 100644
+index 0000000..34b519d
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/auth/application/service/AuthService.java
+@@ -0,0 +1,87 @@
++package com.qltc.auth.application.service;
++
++import com.qltc.auth.api.dto.AuthResponse;
++import com.qltc.auth.api.dto.LoginRequest;
++import com.qltc.auth.api.dto.RegisterRequest;
++import com.qltc.shared.security.AuthConstants;
++import com.qltc.shared.security.JwtService;
++import com.qltc.shared.security.UserPrincipal;
++import com.qltc.user.infrastructure.persistence.entity.UserEntity;
++import com.qltc.user.infrastructure.persistence.repository.UserRepository;
++import lombok.RequiredArgsConstructor;
++import lombok.extern.slf4j.Slf4j;
++import org.springframework.security.authentication.AuthenticationManager;
++import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
++import org.springframework.security.core.Authentication;
++import org.springframework.security.core.context.SecurityContextHolder;
++import org.springframework.security.crypto.password.PasswordEncoder;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++
++@Slf4j
++@Service
++@RequiredArgsConstructor
++public class AuthService {
++
++    private final UserRepository userRepository;
++    private final PasswordEncoder passwordEncoder;
++    private final AuthenticationManager authenticationManager;
++    private final JwtService jwtService;
++
++    @Transactional
++    public AuthResponse register(RegisterRequest request) {
++        log.info("Registering user: {}", request.getUsername());
++
++        if (userRepository.existsByUsername(request.getUsername())) {
++            throw new IllegalArgumentException(AuthConstants.USERNAME_EXISTS_MESSAGE);
++        }
++
++        UserEntity user = UserEntity.builder()
++                .username(request.getUsername())
++                .passwordHash(passwordEncoder.encode(request.getPassword()))
++                .fullName(request.getFullName())
++                .build();
++
++        UserEntity savedUser = userRepository.save(user);
++        log.info("User registered successfully: id={}", savedUser.getId());
++
++        // Authenticate the registered user to generate a token immediately
++        Authentication authentication = authenticationManager.authenticate(
++                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
++        );
++        SecurityContextHolder.getContext().setAuthentication(authentication);
++        String token = jwtService.generateToken(authentication);
++
++        return AuthResponse.builder()
++                .token(token)
++                .tokenType(AuthConstants.TOKEN_TYPE_BEARER)
++                .id(savedUser.getId())
++                .username(savedUser.getUsername())
++                .fullName(savedUser.getFullName())
++                .build();
++    }
++
++    @Transactional(readOnly = true)
++    public AuthResponse login(LoginRequest request) {
++        log.info("Logging in user: {}", request.getUsername());
++
++        Authentication authentication = authenticationManager.authenticate(
++                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
++        );
++
++        SecurityContextHolder.getContext().setAuthentication(authentication);
++        String token = jwtService.generateToken(authentication);
++
++        // Optimization: Extract user details directly from the authenticated principal in memory,
++        // avoiding a redundant database query!
++        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
++
++        return AuthResponse.builder()
++                .token(token)
++                .tokenType(AuthConstants.TOKEN_TYPE_BEARER)
++                .id(principal.getId())
++                .username(principal.getUsername())
++                .fullName(principal.getFullName())
++                .build();
++    }
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/shared/exception/GlobalExceptionHandler.java b/qltc-backend/src/main/java/com/qltc/shared/exception/GlobalExceptionHandler.java
+new file mode 100644
+index 0000000..905fbf9
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/shared/exception/GlobalExceptionHandler.java
+@@ -0,0 +1,37 @@
++package com.qltc.shared.exception;
++
++import com.qltc.shared.security.AuthConstants;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.MethodArgumentNotValidException;
++import org.springframework.web.bind.annotation.ExceptionHandler;
++import org.springframework.web.bind.annotation.RestControllerAdvice;
++
++import java.util.HashMap;
++import java.util.Map;
++
++@RestControllerAdvice
++public class GlobalExceptionHandler {
++
++    @ExceptionHandler(IllegalArgumentException.class)
++    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
++        Map<String, String> error = new HashMap<>();
++        error.put("error", ex.getMessage());
++        return ResponseEntity.badRequest().body(error);
++    }
++
++    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
++    public ResponseEntity<Map<String, String>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
++        Map<String, String> error = new HashMap<>();
++        error.put("error", AuthConstants.INVALID_CREDENTIALS_MESSAGE);
++        return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body(error);
++    }
++
++    @ExceptionHandler(MethodArgumentNotValidException.class)
++    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
++        Map<String, String> errors = new HashMap<>();
++        ex.getBindingResult().getFieldErrors().forEach(error -> 
++            errors.put(error.getField(), error.getDefaultMessage())
++        );
++        return ResponseEntity.badRequest().body(errors);
++    }
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/shared/security/AuthConstants.java b/qltc-backend/src/main/java/com/qltc/shared/security/AuthConstants.java
+new file mode 100644
+index 0000000..20b6280
+--- /dev/null
++++ b/qltc-backend/src/main/java/com/qltc/shared/security/AuthConstants.java
+@@ -0,0 +1,14 @@
++package com.qltc.shared.security;
++
++public final class AuthConstants {
++    private AuthConstants() {
++        // restrict instantiation
++    }
++
++    public static final String TOKEN_TYPE_BEARER = "Bearer";
++
++    // Error messages
++    public static final String USERNAME_EXISTS_MESSAGE = "Tên đăng nhập đã tồn tại trên hệ thống";
++    public static final String INVALID_CREDENTIALS_MESSAGE = "Tên đăng nhập hoặc mật khẩu không chính xác";
++    public static final String USER_NOT_FOUND_MESSAGE = "Không tìm thấy thông tin người dùng";
++}
+diff --git a/qltc-backend/src/main/java/com/qltc/shared/security/UserPrincipal.java b/qltc-backend/src/main/java/com/qltc/shared/security/UserPrincipal.java
+index 66224e0..46ec701 100644
+--- a/qltc-backend/src/main/java/com/qltc/shared/security/UserPrincipal.java
++++ b/qltc-backend/src/main/java/com/qltc/shared/security/UserPrincipal.java
+@@ -13,12 +13,14 @@ public class UserPrincipal implements UserDetails {
+     private final Long id;
+     private final String username;
+     private final String password;
++    private final String fullName;
+     private final Collection<? extends GrantedAuthority> authorities;
+ 
+-    public UserPrincipal(Long id, String username, String password, Collection<? extends GrantedAuthority> authorities) {
++    public UserPrincipal(Long id, String username, String password, String fullName, Collection<? extends GrantedAuthority> authorities) {
+         this.id = id;
+         this.username = username;
+         this.password = password;
++        this.fullName = fullName;
+         this.authorities = authorities;
+     }
+ 
+@@ -29,10 +31,15 @@ public class UserPrincipal implements UserDetails {
+                 user.getId(),
+                 user.getUsername(),
+                 user.getPasswordHash(),
++                user.getFullName(),
+                 authorities
+         );
+     }
+ 
++    public String getFullName() {
++        return fullName;
++    }
++
+     public Long getId() {
+         return id;
+     }
+diff --git a/qltc-backend/src/test/java/com/qltc/auth/api/AuthControllerTest.java b/qltc-backend/src/test/java/com/qltc/auth/api/AuthControllerTest.java
+new file mode 100644
+index 0000000..91fdc01
+--- /dev/null
++++ b/qltc-backend/src/test/java/com/qltc/auth/api/AuthControllerTest.java
+@@ -0,0 +1,134 @@
++package com.qltc.auth.api;
++
++import com.fasterxml.jackson.databind.ObjectMapper;
++import com.qltc.auth.api.dto.LoginRequest;
++import com.qltc.auth.api.dto.RegisterRequest;
++import com.qltc.user.infrastructure.persistence.repository.UserRepository;
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.http.MediaType;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.transaction.annotation.Transactional;
++
++import static org.hamcrest.Matchers.*;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
++
++@SpringBootTest
++@AutoConfigureMockMvc
++@Transactional
++public class AuthControllerTest {
++
++    @Autowired
++    private MockMvc mockMvc;
++
++    @Autowired
++    private UserRepository userRepository;
++
++    @Autowired
++    private ObjectMapper objectMapper;
++
++    @BeforeEach
++    public void setup() {
++        userRepository.deleteAll();
++    }
++
++    @Test
++    public void testRegisterSuccess() throws Exception {
++        RegisterRequest request = RegisterRequest.builder()
++                .username("testuser")
++                .password("password123")
++                .fullName("Test User")
++                .build();
++
++        mockMvc.perform(post("/api/auth/register")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(request)))
++                .andExpect(status().isCreated())
++                .andExpect(jsonPath("$.token", notNullValue()))
++                .andExpect(jsonPath("$.tokenType", is("Bearer")))
++                .andExpect(jsonPath("$.username", is("testuser")))
++                .andExpect(jsonPath("$.fullName", is("Test User")));
++    }
++
++    @Test
++    public void testRegisterDuplicateUsername() throws Exception {
++        RegisterRequest request = RegisterRequest.builder()
++                .username("testuser")
++                .password("password123")
++                .fullName("Test User")
++                .build();
++
++        // Register first time
++        mockMvc.perform(post("/api/auth/register")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(request)))
++                .andExpect(status().isCreated());
++
++        // Register second time with same username
++        mockMvc.perform(post("/api/auth/register")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(request)))
++                .andExpect(status().isBadRequest())
++                .andExpect(jsonPath("$.error", is("Tên đăng nhập đã tồn tại trên hệ thống")));
++    }
++
++    @Test
++    public void testLoginSuccess() throws Exception {
++        RegisterRequest registerRequest = RegisterRequest.builder()
++                .username("testuser")
++                .password("password123")
++                .fullName("Test User")
++                .build();
++
++        // Pre-register
++        mockMvc.perform(post("/api/auth/register")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(registerRequest)))
++                .andExpect(status().isCreated());
++
++        // Test Login
++        LoginRequest loginRequest = LoginRequest.builder()
++                .username("testuser")
++                .password("password123")
++                .build();
++
++        mockMvc.perform(post("/api/auth/login")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(loginRequest)))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.token", notNullValue()))
++                .andExpect(jsonPath("$.tokenType", is("Bearer")))
++                .andExpect(jsonPath("$.username", is("testuser")))
++                .andExpect(jsonPath("$.fullName", is("Test User")));
++    }
++
++    @Test
++    public void testLoginWrongPassword() throws Exception {
++        RegisterRequest registerRequest = RegisterRequest.builder()
++                .username("testuser")
++                .password("password123")
++                .fullName("Test User")
++                .build();
++
++        // Pre-register
++        mockMvc.perform(post("/api/auth/register")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(registerRequest)))
++                .andExpect(status().isCreated());
++
++        // Login with wrong password
++        LoginRequest loginRequest = LoginRequest.builder()
++                .username("testuser")
++                .password("wrongpassword")
++                .build();
++
++        mockMvc.perform(post("/api/auth/login")
++                .contentType(MediaType.APPLICATION_JSON)
++                .content(objectMapper.writeValueAsString(loginRequest)))
++                .andExpect(status().isUnauthorized());
++    }
++}

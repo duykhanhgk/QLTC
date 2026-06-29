@@ -1,5 +1,12 @@
+D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\AuthController.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\dto\AuthResponse.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\dto\LoginRequest.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\dto\RegisterRequest.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\application\service\AuthService.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\QltcBackendApplication.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\config\SecurityConfig.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\exception\GlobalExceptionHandler.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\AuthConstants.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\CustomUserDetailsService.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\JwtAuthenticationFilter.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\security\JwtService.java
