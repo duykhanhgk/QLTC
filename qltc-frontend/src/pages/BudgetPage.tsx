@@ -41,13 +41,13 @@ export const BudgetPage: React.FC = () => {
 
   const getProgressBarColor = (percentage: number) => {
     if (percentage >= 100) return 'bg-red-500';
-    if (percentage >= 80) return 'bg-orange-500';
+    if (percentage >= 90) return 'bg-orange-500';
     return 'bg-[#2ECC71]';
   };
 
   const getStatusText = (percentage: number) => {
-    if (percentage >= 100) return <span className="text-red-600 font-medium">Vượt ngân sách</span>;
-    if (percentage >= 80) return <span className="text-orange-600 font-medium">Sắp hết ngân sách</span>;
+    if (percentage >= 100) return <span className="text-red-600 font-medium flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Vượt ngân sách</span>;
+    if (percentage >= 90) return <span className="text-orange-600 font-medium flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Cảnh báo: Sắp hết ngân sách</span>;
     return <span className="text-[#27AE60] font-medium">Đang trong định mức</span>;
   };
 
@@ -98,7 +98,7 @@ export const BudgetPage: React.FC = () => {
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className={`p-4 rounded-xl ${totalPercentage >= 100 ? 'bg-red-50 text-red-600' : totalPercentage >= 80 ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>
+          <div className={`p-4 rounded-xl ${totalPercentage >= 100 ? 'bg-red-50 text-red-600' : totalPercentage >= 90 ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>
             <AlertTriangle className="w-8 h-8" />
           </div>
           <div>
@@ -172,7 +172,14 @@ export const BudgetPage: React.FC = () => {
                     />
                   </div>
                   {!isOver ? (
-                    <p className="text-xs text-slate-400 text-right font-medium">Còn lại {formatCurrency(remaining)}</p>
+                    <div>
+                      <p className="text-xs text-slate-400 text-right font-medium">Còn lại {formatCurrency(remaining)}</p>
+                      {budget.progressPercentage >= 90 && (
+                        <p className="text-xs text-orange-600 text-right font-medium mt-1">
+                          Hãy nhắc nhở bản thân tiết kiệm nhé!
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-xs text-red-500 text-right font-medium">Vượt quá {formatCurrency(Math.abs(remaining))}</p>
                   )}
