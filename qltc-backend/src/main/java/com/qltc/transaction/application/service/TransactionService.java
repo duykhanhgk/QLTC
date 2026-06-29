@@ -14,4 +14,5 @@ public interface TransactionService {
     TransactionResponse createTransaction(Long userId, TransactionRequest request);
     List<MonthlySummaryResponse> getMonthlySummary(Long userId, int year);
     List<com.qltc.transaction.api.dto.CategorySummaryResponse> getCategorySummary(Long userId, int month, int year);
+    byte[] exportTransactionsToCsv(Long userId);
 }

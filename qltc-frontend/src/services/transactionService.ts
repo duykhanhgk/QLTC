@@ -46,5 +46,17 @@ export const transactionService = {
   getCategorySummary: async (month: number, year: number): Promise<CategorySummaryResponse[]> => {
     const response = await apiClient.get(`/transactions/category-summary?month=${month}&year=${year}`);
     return response as CategorySummaryResponse[];
+  },
+
+  exportTransactions: async (): Promise<void> => {
+    const blob = await apiClient.getBlob('/transactions/export');
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'lich-su-giao-dich.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 };

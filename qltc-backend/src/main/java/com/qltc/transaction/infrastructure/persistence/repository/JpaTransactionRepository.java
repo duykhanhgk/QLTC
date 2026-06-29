@@ -40,4 +40,11 @@ public interface JpaTransactionRepository extends JpaRepository<TransactionEntit
            "GROUP BY c.name " +
            "ORDER BY total DESC")
     List<Object[]> getExpenseSummaryByCategory(@Param("userId") Long userId, @Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT new com.qltc.transaction.api.dto.TransactionExportDto(t.transactionDate, t.amount, t.type, c.name, t.note) " +
+           "FROM TransactionEntity t " +
+           "LEFT JOIN CategoryEntity c ON t.categoryId = c.id " +
+           "WHERE t.userId = :userId " +
+           "ORDER BY t.transactionDate DESC")
+    List<com.qltc.transaction.api.dto.TransactionExportDto> exportTransactions(@Param("userId") Long userId);
 }

@@ -3,6 +3,7 @@ package com.qltc.transaction.application.service;
 import com.qltc.shared.event.TransactionCreatedEvent;
 import com.qltc.transaction.api.dto.CategorySummaryResponse;
 import com.qltc.transaction.api.dto.MonthlySummaryResponse;
+import com.qltc.transaction.api.dto.TransactionExportDto;
 import com.qltc.transaction.api.dto.TransactionRequest;
 import com.qltc.transaction.api.dto.TransactionResponse;
 import com.qltc.transaction.domain.model.TransactionType;
@@ -18,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -137,6 +141,45 @@ public class TransactionServiceImpl implements TransactionService {
             }
         }
 
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportTransactionsToCsv(Long userId) {
+        List<TransactionExportDto> transactions = transactionRepository.exportTransactions(userId);
+        StringBuilder sb = new StringBuilder();
+        
+        // Add Header
+        sb.append("Ngày giao dịch,Số tiền,Loại giao dịch,Danh mục,Ghi chú\n");
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+        for (TransactionExportDto t : transactions) {
+            sb.append(t.getTransactionDate() != null ? formatter.format(t.getTransactionDate()) : "").append(",");
+            sb.append(t.getAmount() != null ? t.getAmount().toPlainString() : "").append(",");
+            
+            String typeStr = "";
+            if (t.getType() != null) {
+                switch (t.getType()) {
+                    case INCOME: typeStr = "Thu nhập"; break;
+                    case EXPENSE: typeStr = "Chi tiêu"; break;
+                    case TRANSFER: typeStr = "Chuyển tiền"; break;
+                }
+            }
+            sb.append(typeStr).append(",");
+            
+            sb.append(t.getCategoryName() != null ? "\"" + t.getCategoryName() + "\"" : "").append(",");
+            sb.append(t.getNote() != null ? "\"" + t.getNote().replace("\"", "\"\"") + "\"" : "").append("\n");
+        }
+
+        // prepend UTF-8 BOM so Excel opens it with correct encoding
+        byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+        byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] result = new byte[bom.length + content.length];
+        System.arraycopy(bom, 0, result, 0, bom.length);
+        System.arraycopy(content, 0, result, bom.length, content.length);
+        
         return result;
     }
 

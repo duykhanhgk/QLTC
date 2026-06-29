@@ -8,7 +8,9 @@ import com.qltc.transaction.application.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +51,17 @@ public class TransactionController {
             Authentication authentication) {
         Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(transactionService.getCategorySummary(userId, month, year));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportTransactions(Authentication authentication) {
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
+        byte[] csvData = transactionService.exportTransactionsToCsv(userId);
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"lich-su-giao-dich.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))
+                .body(csvData);
     }
 
     @PostMapping

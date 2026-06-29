@@ -20,6 +20,15 @@ export const apiClient = {
   },
   async delete(endpoint: string) {
     return fetchWithAuth(endpoint, { method: 'DELETE' });
+  },
+  async getBlob(endpoint: string) {
+    const token = localStorage.getItem('token');
+    const headers = new Headers();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    
+    const response = await fetch(`${BASE_URL}${endpoint}`, { method: 'GET', headers });
+    if (!response.ok) throw new Error('API Error downloading file');
+    return response.blob();
   }
 };
 

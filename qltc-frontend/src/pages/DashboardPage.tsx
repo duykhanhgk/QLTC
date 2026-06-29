@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, AlertTriangle, Wallet, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
+import { BookOpen, AlertTriangle, Wallet, TrendingUp, PieChart as PieChartIcon, Download } from 'lucide-react';
 import { formatVND } from '../utils/format';
 import { transactionService } from '../services/transactionService';
 import { useQuery } from '@tanstack/react-query';
@@ -69,6 +69,15 @@ export const DashboardPage: React.FC = () => {
     );
   };
 
+  const handleExportCSV = async () => {
+    try {
+      await transactionService.exportTransactions();
+    } catch (error) {
+      console.error('Lỗi khi tải CSV:', error);
+      alert('Không thể xuất file CSV. Vui lòng thử lại.');
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -131,7 +140,13 @@ export const DashboardPage: React.FC = () => {
               <BookOpen className="h-4 w-4 text-[#005F9E]" />
               Sổ giao dịch gần đây
             </h3>
-            <button className="text-sm text-[#005F9E] hover:text-[#004A7C] font-medium">Xem tất cả →</button>
+            <div className="flex items-center gap-4">
+              <button onClick={handleExportCSV} className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005F9E] text-white hover:bg-[#004A7C] font-medium transition-colors">
+                <Download className="w-4 h-4" />
+                Xuất CSV
+              </button>
+              <button className="text-sm text-[#005F9E] hover:text-[#004A7C] font-medium">Xem tất cả →</button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
