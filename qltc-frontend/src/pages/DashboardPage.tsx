@@ -2,34 +2,55 @@ import React, { useState } from 'react';
 import { BookOpen, AlertTriangle, Wallet, TrendingUp, PieChart as PieChartIcon, Download } from 'lucide-react';
 import { formatVND } from '../utils/format';
 import { transactionService } from '../services/transactionService';
+import { walletService } from '../services/walletService';
+import { categoryService } from '../services/categoryService';
+import { budgetService } from '../services/budgetService';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export const DashboardPage: React.FC = () => {
-  // Mock data representing professional MISA style accounting board
-  const [wallets] = useState([
-    { id: 1, name: 'Tiền mặt (Ví cá nhân)', type: 'CASH', balance: 5420000, color: 'bg-orange-500' },
-    { id: 2, name: 'Ngân hàng Techcombank', type: 'BANK', balance: 42150000, color: 'bg-blue-600' },
-    { id: 3, name: 'Sổ tiết kiệm dài hạn', type: 'SAVINGS', balance: 100000000, color: 'bg-green-600' }
-  ]);
-
-  const [recentTransactions] = useState([
-    { id: 1, type: 'EXPENSE', amount: 150000, category: 'Ăn uống', wallet: 'Tiền mặt', date: '2026-06-26', note: 'Ăn trưa cùng đồng nghiệp' },
-    { id: 2, type: 'INCOME', amount: 15000000, category: 'Lương', wallet: 'Techcombank', date: '2026-06-25', note: 'Thanh toán lương tháng 6' },
-    { id: 3, type: 'EXPENSE', amount: 1200000, category: 'Mua sắm', wallet: 'Techcombank', date: '2026-06-24', note: 'Mua giày thể thao mới' },
-    { id: 4, type: 'TRANSFER', amount: 2000000, category: 'Chuyển khoản', wallet: 'Techcombank', toWallet: 'Tiền mặt', date: '2026-06-23', note: 'Rút tiền mặt tiêu dùng' },
-    { id: 5, type: 'EXPENSE', amount: 450000, category: 'Nhà cửa & Hóa đơn', wallet: 'Techcombank', date: '2026-06-22', note: 'Đóng tiền điện nước' }
-  ]);
-
-  const [budgets] = useState([
-    { category: 'Ăn uống', limit: 4000000, spent: 3250000, percent: 81.2 },
-    { category: 'Mua sắm', limit: 2000000, spent: 1950000, percent: 97.5 },
-    { category: 'Di chuyển', limit: 1000000, spent: 420000, percent: 42.0 }
-  ]);
-
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
+  // Fetch real data
+  const { data: wallets = [] } = useQuery({
+    queryKey: ['wallets'],
+    queryFn: () => walletService.getWallets()
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryService.getCategories()
+  });
+
+  const { data: recentTransactionsPage } = useQuery({
+    queryKey: ['recentTransactions'],
+    queryFn: () => transactionService.getTransactions({ page: 0, size: 5 })
+  });
+  const recentTransactions = recentTransactionsPage?.content || [];
+
+  const { data: budgetsResponse = [] } = useQuery({
+    queryKey: ['budgets', currentMonth, currentYear],
+    queryFn: () => budgetService.getBudgets(currentMonth, currentYear)
+  });
+
+  const getWalletName = (id: number | null | undefined) => wallets.find(w => w.id === id)?.name || 'Ví không xác định';
+  const getCategoryName = (id: number | null | undefined) => categories.find(c => c.id === id)?.name || 'Danh mục khác';
+
+  // Map data for UI
+  const walletList = wallets.slice(0, 3).map((w, index) => ({
+    ...w,
+    color: index === 0 ? 'bg-orange-500' : index === 1 ? 'bg-blue-600' : 'bg-green-600'
+  }));
+
+  const budgetList = budgetsResponse.map(b => ({
+    category: getCategoryName(b.categoryId),
+    limit: b.amount,
+    spent: b.spentAmount,
+    percent: b.progressPercentage
+  }));
+
 
   const { data: monthlyData, isLoading: isLoadingChart } = useQuery({
     queryKey: ['monthlySummary', currentYear],
@@ -88,7 +109,7 @@ export const DashboardPage: React.FC = () => {
             Số dư khả dụng các ví
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {wallets.map(w => (
+            {walletList.length > 0 ? walletList.map(w => (
               <div key={w.id} className="p-4 rounded-lg bg-[#F8F9FA] border border-slate-100 shadow-xs flex items-start gap-3 hover:shadow-md transition-shadow cursor-pointer">
                 <div className={`p-2.5 rounded-lg ${w.color} text-white`}>
                   <Wallet className="h-5 w-5" />
@@ -98,7 +119,9 @@ export const DashboardPage: React.FC = () => {
                   <p className="text-sm font-extrabold text-slate-800">{formatVND(w.balance)}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-3 text-sm text-slate-500 py-4 text-center">Chưa có dữ liệu ví. Hãy tạo ví ở mục Tài khoản / Ví.</div>
+            )}
           </div>
         </div>
       </div>
@@ -130,54 +153,6 @@ export const DashboardPage: React.FC = () => {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </div>
-        </div>
-
-        {/* Transaction Sổ ghi chép - Detailed Table */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] lg:col-span-2 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-[#005F9E]" />
-              Sổ giao dịch gần đây
-            </h3>
-            <div className="flex items-center gap-4">
-              <button onClick={handleExportCSV} className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005F9E] text-white hover:bg-[#004A7C] font-medium transition-colors">
-                <Download className="w-4 h-4" />
-                Xuất CSV
-              </button>
-              <button className="text-sm text-[#005F9E] hover:text-[#004A7C] font-medium">Xem tất cả →</button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-500 bg-slate-50 uppercase border-y border-slate-100">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Ngày</th>
-                  <th className="px-4 py-3 font-medium">Diễn giải</th>
-                  <th className="px-4 py-3 font-medium">Danh mục</th>
-                  <th className="px-4 py-3 font-medium text-right">Số tiền</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTransactions.map((t) => (
-                  <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-3 text-slate-500">{t.date}</td>
-                    <td className="px-4 py-3 text-slate-800">
-                      <div>{t.note}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{t.type === 'TRANSFER' ? `${t.wallet} → ${t.toWallet}` : t.wallet}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-medium">
-                        {t.category}
-                      </span>
-                    </td>
-                    <td className={`px-4 py-3 text-right font-medium ${t.type === 'INCOME' ? 'text-green-600' : t.type === 'EXPENSE' ? 'text-red-600' : 'text-slate-600'}`}>
-                      {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}{formatVND(t.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
 
@@ -239,8 +214,60 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Transaction Sổ ghi chép - Detailed Table */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] lg:col-span-2 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-[#005F9E]" />
+              Sổ giao dịch gần đây
+            </h3>
+            <div className="flex items-center gap-4">
+              <button onClick={handleExportCSV} className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005F9E] text-white hover:bg-[#004A7C] font-medium transition-colors">
+                <Download className="w-4 h-4" />
+                Xuất CSV
+              </button>
+              <button className="text-sm text-[#005F9E] hover:text-[#004A7C] font-medium">Xem tất cả →</button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-500 bg-slate-50 uppercase border-y border-slate-100">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Ngày</th>
+                  <th className="px-4 py-3 font-medium">Diễn giải</th>
+                  <th className="px-4 py-3 font-medium">Danh mục</th>
+                  <th className="px-4 py-3 font-medium text-right">Số tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentTransactions.length > 0 ? recentTransactions.map((t) => (
+                  <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 text-slate-500">{new Date(t.transactionDate).toLocaleDateString('vi-VN')}</td>
+                    <td className="px-4 py-3 text-slate-800">
+                      <div>{t.note || (t.type === 'INCOME' ? 'Thu nhập' : t.type === 'EXPENSE' ? 'Chi tiêu' : 'Chuyển khoản')}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{t.type === 'TRANSFER' ? `${getWalletName(t.fromWalletId)} → ${getWalletName(t.toWalletId)}` : getWalletName(t.fromWalletId)}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-medium">
+                        {getCategoryName(t.categoryId)}
+                      </span>
+                    </td>
+                    <td className={`px-4 py-3 text-right font-medium ${t.type === 'INCOME' ? 'text-green-600' : t.type === 'EXPENSE' ? 'text-red-600' : 'text-slate-600'}`}>
+                      {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}{formatVND(t.amount)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="text-center py-6 text-slate-500">Chưa có giao dịch nào</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* Budget limits */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] flex flex-col justify-between">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] lg:col-span-1 flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-slate-800 text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -249,7 +276,7 @@ export const DashboardPage: React.FC = () => {
             <p className="text-xs text-slate-500 mb-6">Ngân sách chi tiêu được thiết lập cho tháng 06/2026.</p>
 
             <div className="space-y-5">
-              {budgets.map((b, i) => (
+              {budgetList.length > 0 ? budgetList.map((b, i) => (
                 <div key={i} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-bold">
                     <span className="text-slate-700">{b.category}</span>
@@ -277,7 +304,9 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-              ))}
+              )) : (
+                <div className="text-sm text-slate-500 text-center py-4">Chưa có ngân sách nào được thiết lập.</div>
+              )}
             </div>
           </div>
 
