@@ -29,4 +29,15 @@ public interface JpaTransactionRepository extends JpaRepository<TransactionEntit
            "FROM TransactionEntity t WHERE t.userId = :userId AND YEAR(t.transactionDate) = :year " +
            "GROUP BY MONTH(t.transactionDate), t.type")
     List<Object[]> getMonthlySummaryByYear(@Param("userId") Long userId, @Param("year") int year);
+
+    @Query("SELECT c.name as categoryName, SUM(t.amount) as total " +
+           "FROM TransactionEntity t, CategoryEntity c " +
+           "WHERE t.categoryId = c.id " +
+           "AND t.userId = :userId " +
+           "AND MONTH(t.transactionDate) = :month " +
+           "AND YEAR(t.transactionDate) = :year " +
+           "AND t.type = 'EXPENSE' " +
+           "GROUP BY c.name " +
+           "ORDER BY total DESC")
+    List<Object[]> getExpenseSummaryByCategory(@Param("userId") Long userId, @Param("month") int month, @Param("year") int year);
 }

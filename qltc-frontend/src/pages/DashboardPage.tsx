@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, AlertTriangle, Wallet, TrendingUp } from 'lucide-react';
+import { BookOpen, AlertTriangle, Wallet, TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { formatVND } from '../utils/format';
 import { transactionService } from '../services/transactionService';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export const DashboardPage: React.FC = () => {
   // Mock data representing professional MISA style accounting board
@@ -28,9 +28,17 @@ export const DashboardPage: React.FC = () => {
   ]);
 
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
   const { data: monthlyData, isLoading: isLoadingChart } = useQuery({
     queryKey: ['monthlySummary', currentYear],
     queryFn: () => transactionService.getMonthlySummary(currentYear)
+  });
+
+  const { data: categoryData, isLoading: isLoadingPie } = useQuery({
+    queryKey: ['categorySummary', selectedMonth, currentYear],
+    queryFn: () => transactionService.getCategorySummary(selectedMonth, currentYear)
   });
 
   const chartData = monthlyData?.map(item => ({
@@ -44,6 +52,21 @@ export const DashboardPage: React.FC = () => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(0)}M`;
     if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
     return value.toString();
+  };
+
+  const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F06292', '#BA68C8', '#4DB6AC', '#FFD54F', '#A1887F'];
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={600}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
   };
 
   return (
@@ -106,45 +129,98 @@ export const DashboardPage: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-[#005F9E]" />
-              Nhật ký giao dịch gần đây
+              Sổ giao dịch gần đây
             </h3>
-            <a href="#" className="text-xs text-[#005F9E] font-bold hover:underline">Xem tất cả</a>
+            <button className="text-sm text-[#005F9E] hover:text-[#004A7C] font-medium">Xem tất cả →</button>
           </div>
-
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase bg-slate-50/50">
-                  <th className="py-3 px-4">Ngày</th>
-                  <th className="py-3 px-4">Danh mục</th>
-                  <th className="py-3 px-4">Ghi chú</th>
-                  <th className="py-3 px-4 text-right">Số tiền</th>
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-500 bg-slate-50 uppercase border-y border-slate-100">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Ngày</th>
+                  <th className="px-4 py-3 font-medium">Diễn giải</th>
+                  <th className="px-4 py-3 font-medium">Danh mục</th>
+                  <th className="px-4 py-3 font-medium text-right">Số tiền</th>
                 </tr>
               </thead>
-              <tbody className="text-sm divide-y divide-slate-100 font-medium">
-                {recentTransactions.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50/30 transition-colors">
-                    <td className="py-3.5 px-4 text-slate-500 text-xs">{t.date}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${
-                        t.type === 'INCOME' ? 'bg-green-50 text-green-600' :
-                        t.type === 'EXPENSE' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'
-                      }`}>
+              <tbody>
+                {recentTransactions.map((t) => (
+                  <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 text-slate-500">{t.date}</td>
+                    <td className="px-4 py-3 text-slate-800">
+                      <div>{t.note}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{t.type === 'TRANSFER' ? `${t.wallet} → ${t.toWallet}` : t.wallet}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-medium">
                         {t.category}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-700 font-medium text-xs max-w-[200px] truncate">{t.note}</td>
-                    <td className={`py-3.5 px-4 text-right font-extrabold ${
-                      t.type === 'INCOME' ? 'text-green-600' :
-                      t.type === 'EXPENSE' ? 'text-red-600' : 'text-slate-600'
-                    }`}>
-                      {t.type === 'EXPENSE' ? '-' : t.type === 'INCOME' ? '+' : ''}
-                      {formatVND(t.amount)}
+                    <td className={`px-4 py-3 text-right font-medium ${t.type === 'INCOME' ? 'text-green-600' : t.type === 'EXPENSE' ? 'text-red-600' : 'text-slate-600'}`}>
+                      {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '-' : ''}{formatVND(t.amount)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Pie Chart: Expense Structure */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] lg:col-span-1 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+              <PieChartIcon className="h-4 w-4 text-orange-500" />
+              Cơ cấu chi tiêu
+            </h3>
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="text-sm border-slate-200 rounded-lg text-slate-600 focus:ring-[#005F9E] focus:border-[#005F9E]"
+            >
+              {[...Array(12)].map((_, i) => (
+                <option key={i+1} value={i+1}>Tháng {i+1}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex-1 flex items-center justify-center min-h-[300px]">
+            {isLoadingPie ? (
+              <div className="text-slate-400">Đang tải biểu đồ...</div>
+            ) : (!categoryData || categoryData.length === 0) ? (
+              <div className="text-slate-400 flex flex-col items-center">
+                <PieChartIcon className="w-12 h-12 text-slate-200 mb-2" />
+                <p>Chưa có khoản chi nào trong tháng</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="percentage"
+                    nameKey="categoryName"
+                  >
+                    {categoryData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number, name: string, props: any) => [
+                      `${value}% (${formatVND(props.payload.amount)})`, 
+                      name
+                    ]}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #EBEEF5', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

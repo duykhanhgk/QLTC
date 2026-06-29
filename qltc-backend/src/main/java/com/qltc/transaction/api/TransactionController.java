@@ -3,6 +3,7 @@ package com.qltc.transaction.api;
 import com.qltc.transaction.api.dto.TransactionRequest;
 import com.qltc.transaction.api.dto.TransactionResponse;
 import com.qltc.transaction.api.dto.MonthlySummaryResponse;
+import com.qltc.transaction.api.dto.CategorySummaryResponse;
 import com.qltc.transaction.application.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,15 @@ public class TransactionController {
             Authentication authentication) {
         Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(transactionService.getMonthlySummary(userId, year));
+    }
+
+    @GetMapping("/category-summary")
+    public ResponseEntity<List<CategorySummaryResponse>> getCategorySummary(
+            @RequestParam int month,
+            @RequestParam int year,
+            Authentication authentication) {
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
+        return ResponseEntity.ok(transactionService.getCategorySummary(userId, month, year));
     }
 
     @PostMapping

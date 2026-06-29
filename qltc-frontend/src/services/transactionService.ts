@@ -15,6 +15,12 @@ export interface MonthlySummaryResponse {
   expense: number;
 }
 
+export interface CategorySummaryResponse {
+  categoryName: string;
+  amount: number;
+  percentage: number;
+}
+
 export const transactionService = {
   getTransactions: async (params: SearchParams = {}): Promise<PageResponse<Transaction>> => {
     // remove empty params
@@ -35,5 +41,10 @@ export const transactionService = {
   getMonthlySummary: async (year: number): Promise<MonthlySummaryResponse[]> => {
     const response = await apiClient.get(`/transactions/summary?year=${year}`);
     return response as MonthlySummaryResponse[];
+  },
+
+  getCategorySummary: async (month: number, year: number): Promise<CategorySummaryResponse[]> => {
+    const response = await apiClient.get(`/transactions/category-summary?month=${month}&year=${year}`);
+    return response as CategorySummaryResponse[];
   }
 };

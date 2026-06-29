@@ -1,6 +1,7 @@
 package com.qltc.transaction.application.service;
 
 import com.qltc.shared.event.TransactionCreatedEvent;
+import com.qltc.transaction.api.dto.CategorySummaryResponse;
 import com.qltc.transaction.api.dto.MonthlySummaryResponse;
 import com.qltc.transaction.api.dto.TransactionRequest;
 import com.qltc.transaction.api.dto.TransactionResponse;
@@ -104,6 +105,35 @@ public class TransactionServiceImpl implements TransactionService {
                 summary.setIncome(summary.getIncome().add(total));
             } else if (type == TransactionType.EXPENSE) {
                 summary.setExpense(summary.getExpense().add(total));
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategorySummaryResponse> getCategorySummary(Long userId, int month, int year) {
+        List<Object[]> rawSummary = transactionRepository.getExpenseSummaryByCategory(userId, month, year);
+        
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        List<CategorySummaryResponse> result = new ArrayList<>();
+        
+        for (Object[] row : rawSummary) {
+            String categoryName = (String) row[0];
+            BigDecimal total = (BigDecimal) row[1];
+            
+            totalExpense = totalExpense.add(total);
+            result.add(CategorySummaryResponse.builder()
+                    .categoryName(categoryName)
+                    .amount(total)
+                    .build());
+        }
+
+        if (totalExpense.compareTo(BigDecimal.ZERO) > 0) {
+            for (CategorySummaryResponse res : result) {
+                double percent = res.getAmount().doubleValue() / totalExpense.doubleValue() * 100;
+                res.setPercentage(Math.round(percent * 10.0) / 10.0); // round to 1 decimal
             }
         }
 
