@@ -24,4 +24,9 @@ public interface JpaTransactionRepository extends JpaRepository<TransactionEntit
             @Param("categoryId") Long categoryId,
             @Param("note") String note,
             Pageable pageable);
+
+    @Query("SELECT MONTH(t.transactionDate) as month, t.type as type, SUM(t.amount) as total " +
+           "FROM TransactionEntity t WHERE t.userId = :userId AND YEAR(t.transactionDate) = :year " +
+           "GROUP BY MONTH(t.transactionDate), t.type")
+    List<Object[]> getMonthlySummaryByYear(@Param("userId") Long userId, @Param("year") int year);
 }

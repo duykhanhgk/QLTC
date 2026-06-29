@@ -9,6 +9,12 @@ interface SearchParams {
   note?: string;
 }
 
+export interface MonthlySummaryResponse {
+  month: number;
+  income: number;
+  expense: number;
+}
+
 export const transactionService = {
   getTransactions: async (params: SearchParams = {}): Promise<PageResponse<Transaction>> => {
     // remove empty params
@@ -24,5 +30,10 @@ export const transactionService = {
 
   createTransaction: async (data: TransactionPayload): Promise<Transaction> => {
     return apiClient.post('/transactions', data);
+  },
+
+  getMonthlySummary: async (year: number): Promise<MonthlySummaryResponse[]> => {
+    const response = await apiClient.get(`/transactions/summary?year=${year}`);
+    return response as MonthlySummaryResponse[];
   }
 };

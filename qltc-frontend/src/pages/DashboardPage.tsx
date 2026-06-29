@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, AlertTriangle, Wallet } from 'lucide-react';
+import { BookOpen, AlertTriangle, Wallet, TrendingUp } from 'lucide-react';
 import { formatVND } from '../utils/format';
+import { transactionService } from '../services/transactionService';
+import { useQuery } from '@tanstack/react-query';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export const DashboardPage: React.FC = () => {
   // Mock data representing professional MISA style accounting board
@@ -23,6 +26,25 @@ export const DashboardPage: React.FC = () => {
     { category: 'Mua sắm', limit: 2000000, spent: 1950000, percent: 97.5 },
     { category: 'Di chuyển', limit: 1000000, spent: 420000, percent: 42.0 }
   ]);
+
+  const currentYear = new Date().getFullYear();
+  const { data: monthlyData, isLoading: isLoadingChart } = useQuery({
+    queryKey: ['monthlySummary', currentYear],
+    queryFn: () => transactionService.getMonthlySummary(currentYear)
+  });
+
+  const chartData = monthlyData?.map(item => ({
+    name: `T${item.month}`,
+    'Thu nhập': item.income,
+    'Chi tiêu': item.expense
+  })) || [];
+
+  const formatYAxis = (value: number) => {
+    if (value === 0) return '0';
+    if (value >= 1000000) return `${(value / 1000000).toFixed(0)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+    return value.toString();
+  };
 
   return (
     <>
@@ -52,6 +74,33 @@ export const DashboardPage: React.FC = () => {
       {/* ROW 2: Transaction History & Budget limits */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] lg:col-span-2">
+          <h3 className="font-bold text-slate-800 text-sm mb-6 uppercase tracking-wider flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-green-600" />
+            Biểu đồ Thu nhập & Chi tiêu ({currentYear})
+          </h3>
+          <div className="h-80 w-full">
+            {isLoadingChart ? (
+              <div className="flex justify-center items-center h-full text-slate-400">Đang tải biểu đồ...</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4E7ED" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#909399', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#909399', fontSize: 12 }} tickFormatter={formatYAxis} width={60} />
+                  <Tooltip 
+                    formatter={(value: number) => [formatVND(value), undefined]}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #EBEEF5', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar dataKey="Thu nhập" fill="#2ECC71" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="Chi tiêu" fill="#E74C3C" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
         {/* Transaction Sổ ghi chép - Detailed Table */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-[#DCDFE6] lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-4">

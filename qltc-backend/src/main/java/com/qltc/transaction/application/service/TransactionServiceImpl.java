@@ -1,6 +1,7 @@
 package com.qltc.transaction.application.service;
 
 import com.qltc.shared.event.TransactionCreatedEvent;
+import com.qltc.transaction.api.dto.MonthlySummaryResponse;
 import com.qltc.transaction.api.dto.TransactionRequest;
 import com.qltc.transaction.api.dto.TransactionResponse;
 import com.qltc.transaction.domain.model.TransactionType;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,6 +78,36 @@ public class TransactionServiceImpl implements TransactionService {
         eventPublisher.publishEvent(event);
 
         return mapToResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MonthlySummaryResponse> getMonthlySummary(Long userId, int year) {
+        List<Object[]> rawSummary = transactionRepository.getMonthlySummaryByYear(userId, year);
+        
+        List<MonthlySummaryResponse> result = new ArrayList<>();
+        for (int i = 1; i <= 12; i++) {
+            result.add(MonthlySummaryResponse.builder()
+                    .month(i)
+                    .income(BigDecimal.ZERO)
+                    .expense(BigDecimal.ZERO)
+                    .build());
+        }
+
+        for (Object[] row : rawSummary) {
+            Integer month = (Integer) row[0];
+            TransactionType type = (TransactionType) row[1];
+            BigDecimal total = (BigDecimal) row[2];
+
+            MonthlySummaryResponse summary = result.get(month - 1);
+            if (type == TransactionType.INCOME) {
+                summary.setIncome(summary.getIncome().add(total));
+            } else if (type == TransactionType.EXPENSE) {
+                summary.setExpense(summary.getExpense().add(total));
+            }
+        }
+
+        return result;
     }
 
     private void validateTransactionRequest(TransactionRequest request) {
