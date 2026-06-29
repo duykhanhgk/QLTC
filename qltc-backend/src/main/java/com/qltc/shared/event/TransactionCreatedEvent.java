@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -19,4 +20,6 @@ public class TransactionCreatedEvent {
     private BigDecimal amount;
     private Long fromWalletId;
     private Long toWalletId;
+    private Long categoryId;
+    private Instant transactionDate;
 }

@@ -4,9 +4,10 @@ import { MainLayout } from './layouts/MainLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { WalletPage } from './pages/WalletPage';
 import { TransactionPage } from './pages/TransactionPage';
+import { BudgetPage } from './pages/BudgetPage';
 
 type Screen = 'LOGIN' | 'REGISTER' | 'MAIN_APP';
-type Tab = 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS';
+type Tab = 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS' | 'BUDGET';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('LOGIN');
@@ -18,15 +19,37 @@ export default function App() {
   const [registerUsername, setRegisterUsername] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setScreen('MAIN_APP');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword })
+      });
+      if (!res.ok) throw new Error('Đăng nhập thất bại');
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      setScreen('MAIN_APP');
+    } catch (err) {
+      alert('Tên đăng nhập hoặc mật khẩu không đúng!');
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Đăng ký tài khoản thành công! Mời bạn đăng nhập.');
-    setScreen('LOGIN');
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: registerUsername, password: registerPassword, fullName: registerName })
+      });
+      if (!res.ok) throw new Error('Đăng ký thất bại');
+      alert('Đăng ký tài khoản thành công! Mời bạn đăng nhập.');
+      setScreen('LOGIN');
+    } catch (err) {
+      alert('Đăng ký thất bại, tên đăng nhập có thể đã tồn tại!');
+    }
   };
 
   const handleLogout = () => {
@@ -266,6 +289,7 @@ export default function App() {
       {activeTab === 'DASHBOARD' && <DashboardPage />}
       {activeTab === 'WALLET' && <WalletPage />}
       {activeTab === 'TRANSACTIONS' && <TransactionPage />}
+      {activeTab === 'BUDGET' && <BudgetPage />}
     </MainLayout>
   );
 }

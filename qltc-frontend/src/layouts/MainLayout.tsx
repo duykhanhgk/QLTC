@@ -6,15 +6,14 @@ import {
   BookOpen, 
   LogOut, 
   Coins, 
-  Calendar, 
-  Plus,
+  Calendar,
   Wallet
 } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  activeTab: 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS';
-  onTabChange: (tab: 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS') => void;
+  activeTab: 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS' | 'BUDGET';
+  onTabChange: (tab: 'DASHBOARD' | 'WALLET' | 'TRANSACTIONS' | 'BUDGET') => void;
   onLogout: () => void;
 }
 
@@ -64,7 +63,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, onT
               <Wallet className="h-5 w-5" />
               Tài khoản / Ví
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg font-medium transition-all">
+            <button 
+              onClick={() => onTabChange('BUDGET')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'BUDGET' ? 'bg-[#005F9E] text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
               <PieIcon className="h-5 w-5" />
               Ngân sách chi tiêu
             </button>
@@ -105,10 +109,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, onT
             <span className="font-semibold text-slate-700 text-sm">Hôm nay: {new Date().toLocaleDateString('vi-VN')}</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#2ECC71] hover:bg-[#27AE60] text-white font-semibold rounded-lg text-sm shadow-sm transition-all">
-              <Plus className="h-4 w-4" />
-              Thêm giao dịch
-            </button>
+            {/* Action buttons can be added here if needed in the future */}
           </div>
         </header>
 

@@ -28,7 +28,7 @@ public class TransactionController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String note,
             Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(transactionService.searchTransactions(userId, walletId, categoryId, note, page, size));
     }
 
@@ -36,7 +36,7 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> createTransaction(
             @Valid @RequestBody TransactionRequest request,
             Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(transactionService.createTransaction(userId, request));
     }

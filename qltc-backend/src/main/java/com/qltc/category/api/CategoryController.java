@@ -21,7 +21,7 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getCategories(Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(categoryService.getCategoriesByUserId(userId));
     }
 
@@ -29,7 +29,7 @@ public class CategoryController {
     public ResponseEntity<CategoryResponse> createCategory(
             @Valid @RequestBody CategoryRequest request,
             Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(categoryService.createCategory(userId, request));
     }
@@ -39,7 +39,7 @@ public class CategoryController {
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest request,
             Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         return ResponseEntity.ok(categoryService.updateCategory(userId, id, request));
     }
 
@@ -47,7 +47,7 @@ public class CategoryController {
     public ResponseEntity<Void> deleteCategory(
             @PathVariable Long id,
             Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
+        Long userId = ((com.qltc.shared.security.UserPrincipal) authentication.getPrincipal()).getId();
         categoryService.deleteCategory(userId, id);
         return ResponseEntity.noContent().build();
     }

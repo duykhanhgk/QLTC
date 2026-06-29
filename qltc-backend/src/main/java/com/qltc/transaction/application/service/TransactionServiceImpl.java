@@ -68,6 +68,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .amount(saved.getAmount())
                 .fromWalletId(saved.getFromWalletId())
                 .toWalletId(saved.getToWalletId())
+                .categoryId(saved.getCategoryId())
+                .transactionDate(saved.getTransactionDate())
                 .build();
         
         eventPublisher.publishEvent(event);
