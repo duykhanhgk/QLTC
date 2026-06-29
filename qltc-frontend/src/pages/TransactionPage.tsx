@@ -3,12 +3,17 @@ import { Transaction } from '../types/transaction';
 import { Wallet } from '../types/wallet';
 import { transactionService } from '../services/transactionService';
 import { walletService } from '../services/walletService';
+import { categoryService } from '../services/categoryService';
+import { Category } from '../types/category';
 import { TransactionList } from '../components/transaction/TransactionList';
+import { AddTransactionModal } from '../components/transaction/AddTransactionModal';
 import { Search, Wallet as WalletIcon } from 'lucide-react';
 
 export const TransactionPage: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Pagination & Filter state
   const [page, setPage] = useState(0);
@@ -24,6 +29,15 @@ export const TransactionPage: React.FC = () => {
       setWallets(data);
     } catch (error) {
       console.error('Failed to fetch wallets:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
     }
   };
 
@@ -52,6 +66,7 @@ export const TransactionPage: React.FC = () => {
 
   useEffect(() => {
     fetchWallets();
+    fetchCategories();
   }, []);
 
   // Fetch when filters change (reset to page 0)
@@ -77,7 +92,10 @@ export const TransactionPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-slate-800">Lịch sử giao dịch</h1>
           <p className="text-slate-500 mt-1">Theo dõi dòng tiền và chi tiêu của bạn</p>
         </div>
-        <button className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm self-start md:self-auto">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm self-start md:self-auto"
+        >
           + Thêm giao dịch
         </button>
       </div>
@@ -122,6 +140,20 @@ export const TransactionPage: React.FC = () => {
           onLoadMore={handleLoadMore} 
         />
       )}
+
+      <AddTransactionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        wallets={wallets}
+        categories={categories}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          // Reset page and reload transactions and wallets
+          setPage(0);
+          fetchWallets();
+          fetchTransactions(0, false);
+        }}
+      />
     </div>
   );
 };
