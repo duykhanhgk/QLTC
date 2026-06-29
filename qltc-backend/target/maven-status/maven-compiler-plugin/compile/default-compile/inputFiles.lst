@@ -3,6 +3,14 @@ D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\dto\AuthResponse.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\dto\LoginRequest.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\api\dto\RegisterRequest.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\auth\application\service\AuthService.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\api\CategoryController.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\api\dto\CategoryRequest.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\api\dto\CategoryResponse.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\application\service\CategoryService.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\application\service\CategoryServiceImpl.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\domain\model\CategoryType.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\infrastructure\persistence\entity\CategoryEntity.java
+D:\QLTC\qltc-backend\src\main\java\com\qltc\category\infrastructure\persistence\repository\JpaCategoryRepository.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\QltcBackendApplication.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\config\SecurityConfig.java
 D:\QLTC\qltc-backend\src\main\java\com\qltc\shared\exception\GlobalExceptionHandler.java
